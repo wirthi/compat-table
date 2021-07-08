@@ -4752,7 +4752,8 @@ exports.tests = [
           chrome89: false,
           safari13_1: true,
           safaritp: true,
-          rhino1_7_13: false
+          rhino1_7_13: false,
+          graalvm21_2: true
         }
       }
     ]

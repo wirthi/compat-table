@@ -9,7 +9,10 @@ var cheerio = require('cheerio');
 var page = fs.readFileSync(path.join(__dirname, String(process.argv[2] || 'es6').toLowerCase(), 'index.html')).toString().replace(/data-source="[^"]*"/g,'');
 var $ = cheerio.load(page);
 var results = {};
+var expected = {};
 var desc = {};
+
+var engineId = process.argv[3] || 'node10_13';
 
 global.__script_executed = {};
 
@@ -53,16 +56,26 @@ $('#body tbody tr').each(function (index) {
       .replace(/global\.__asyncPassedFn && __asyncPassedFn\(".*?"\)/g, "asyncPassed");
     eval(scr);
   }
+
+  var resultInTable = $(this).find(`td[data-browser=${engineId}]`);
+  if (resultInTable.hasClass('yes')) {
+      expected[index] = true;
+  } else if (resultInTable.hasClass('no')) {
+      expected[index] = false;
+  }
 });
 
 process.on('exit', function(){
   Object.keys(results).forEach(function(test) {
     var result = results[test];
     var name = desc[test];
+    var expectedResult = expected[test];
     if (result === null) {
       console.log('\u25BC\t' + name.replace('§',''));
     } else {
-      console.log(chalk[result === "Strict" ? 'cyan' : result ? 'green' : 'red']((result ? '\u2714' : '\u2718') + '\t' + (name[0]!== '§' ? '\t' + name : name.slice(1)) + '\t'));
+      var matching = result && expectedResult || !result && !expectedResult;
+      var highlight = matching ? (x) => x : chalk[result === "Strict" ? 'cyan' : result ? 'green' : 'red'];
+      console.log(highlight((result ? '\u2714' : '\u2718') + (matching ? '' : ' DIFF') + '\t' + (name[0]!== '§' ? '\t' + name : name.slice(1)) + '\t'));
     }
   });
 });
